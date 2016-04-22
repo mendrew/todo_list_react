@@ -11,37 +11,64 @@ var TodoMenu = React.createClass({
 				Hi, A am TodoMenu
 				<button>Clear All</button>
 				<button>Delete selected</button>
-			</div>
-		);
+			</div>);
 	}
 });
 
 var TodoElement = React.createClass({
+	handleCheck: function() {
+		console.log("note.done = " + this.props.note.done + " checkbox = " + this.refs.todoCheckbox.checked);
+
+		this.props.onUserChecked(this.props.index, this.refs.todoCheckbox.checked);
+	},
+
 	render: function() {
+		console.log("index value: " + this.props.index);
+
+		var todo_text = this.props.done ?
+			<span style={{color: 'red'}}>
+				{this.props.note.text}
+			</span> :
+			this.props.note.text;
+
 		return(
 			<div>
 					<input
 						type="checkbox"
-						checked={this.props.done}
+						/*checked={this.props.note.done}*/
+						ref="todoCheckbox"
+						onChange={this.handleCheck}
 					/>
-					{this.props.text}
-
+					{todo_text}
 			</div>
 		);
 	}
 });
 
 var TodoList = React.createClass({
-	render: function() {
+	handleCheck: function(index, done) {
+		console.log("We handle in TodoList index: " + index + " doneStatus: " + done);
+		this.props.todos[index] = done;
+		console.log("todos with index: " + index + " = " + this.props.todos[index]);
 
+	},
+
+	render: function() {
+		var self = this;
 		var todo_rows = [];
 		this.props.todos.forEach(function(note) {
 			todo_rows.push(
-				<TodoElement checked={note.done} text={note.text} />
+				<TodoElement
+					note={note}
+					index={todo_rows.length + 1}
+					onUserChecked={self.handleCheck}
+				/>
 			);
 		});
 		return (
 			<div>
+				Task text: {this.props.newTaskText}
+				<br/>
 				{todo_rows}
 			</div>
 		);
@@ -49,13 +76,21 @@ var TodoList = React.createClass({
 });
 
 var TodoForm = React.createClass({
+	handleInputChange: function() {
+		this.props.onUserInput(
+			this.refs.newTodoInput.value
+		);
+	},
+
 	render: function() {
 		return (
-
 			<div>
 				<input
 					type="text"
-					placeholder="Search..."
+					placeholder="Todo..."
+					value={this.props.newTaskText}
+					ref="newTodoInput"
+					onChange={this.handleInputChange}
 				/>
 				<button>Add</button>
 			</div>
@@ -64,12 +99,33 @@ var TodoForm = React.createClass({
 });
 
 var TodoTable = React.createClass({
+	handleUserInput: function(newTaskText) {
+		this.setState({
+			newTaskText: newTaskText
+		});
+
+	},
+	getInitialState: function() {
+		return {
+			newTaskText: ''
+		};
+
+	},
 	render: function() {
+		var self = this
+		this.props.todos_data.forEach(function(note) {
+			console.log("["+self.props.todos_data.indexOf(note)+"] = " + note.done);
+		});
 		return (
 			<div>
 				<TodoMenu />
-				<TodoList todos={this.props.todos_data} />
-				<TodoForm />
+				<TodoList
+					todos={this.props.todos_data}
+					newTaskText={this.state.newTaskText}
+				/>
+				<TodoForm
+					onUserInput={this.handleUserInput}
+					newTaskText={this.state.newTaskText}/>
 			</div>
 		);
 	}
