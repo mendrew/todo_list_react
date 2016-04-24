@@ -39,7 +39,7 @@ var TodoElement = React.createClass({
 			</span> :
 			this.props.note.text;
 
-		return(
+		return (
 			<div>
 					<input
 						type="checkbox"
@@ -69,6 +69,7 @@ var TodoList = React.createClass({
 					note={note}
 					index={todo_rows.length}
 					handleCheck={self.handleCheck}
+					key={todo_rows.length}
 				/>
 			);
 		});
@@ -90,9 +91,11 @@ var TodoForm = React.createClass({
 	handleSubmit: function(event) {
 		event.preventDefault();
 
-		if (this.state.todo_text.length == 0) return;
+		var input_todo_text = this.state.todo_text;
 
-		this.props.handleAddTodo(this.state.todo_text);
+		if ( input_todo_text.trim().length == 0) return;
+
+		this.props.handleAddTodo(input_todo_text);
 		this.setState({todo_text: ''});
 	},
 
@@ -124,7 +127,6 @@ var TodoTable = React.createClass({
 			newTaskText: '',
 			todos_data: []
 		};
-
 	},
 
 	componentDidMount: function() {
