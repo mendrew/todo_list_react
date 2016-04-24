@@ -1,32 +1,40 @@
 var TODO_DATA = [
-	{ done: false, text: "Create reactApp"},
-	{ done: false, text: "Create reactApp"},
 	{ done: true, text: "Start typing"},
+	{ done: false, text: "Create React app"},
+	{ done: false, text: "Do something helpfull"},
 ];
 
 var TodoMenu = React.createClass({
+
+	handleClickClear: function() {
+		this.props.handleClear();
+	},
+
+	handleClickDeleteSelected: function() {
+		this.props.handleDeleteSelected();
+	},
+
 	render: function() {
 		return (
 			<div>
-				Hi, A am TodoMenu
-				<button>Clear All</button>
-				<button>Delete selected</button>
+				<button onClick={this.handleClickClear}>Clear All</button>
+				<button onClick={this.handleClickDeleteSelected}>Delete selected</button>
 			</div>);
 	}
 });
 
 var TodoElement = React.createClass({
-	handleCheck: function() {
-		console.log("note.done = " + this.props.note.done + " checkbox = " + this.refs.todoCheckbox.checked);
-
-		this.props.onUserChecked(this.props.index, this.refs.todoCheckbox.checked);
+	handleCheck: function(event) {
+		this.props.handleCheck(this.props.index, event.target.checked);
 	},
 
 	render: function() {
-		console.log("index value: " + this.props.index);
 
-		var todo_text = this.props.done ?
-			<span style={{color: 'red'}}>
+		var todo_text = this.props.note.done ?
+			<span style={{
+				textDecoration: 'line-through',
+				color: 'grey'
+			}}>
 				{this.props.note.text}
 			</span> :
 			this.props.note.text;
@@ -35,7 +43,7 @@ var TodoElement = React.createClass({
 			<div>
 					<input
 						type="checkbox"
-						/*checked={this.props.note.done}*/
+						checked={this.props.note.done}
 						ref="todoCheckbox"
 						onChange={this.handleCheck}
 					/>
@@ -46,28 +54,27 @@ var TodoElement = React.createClass({
 });
 
 var TodoList = React.createClass({
-	handleCheck: function(index, done) {
-		console.log("We handle in TodoList index: " + index + " doneStatus: " + done);
-		this.props.todos[index] = done;
-		console.log("todos with index: " + index + " = " + this.props.todos[index]);
 
+	handleCheck: function(index, done) {
+		this.props.handleCheck(index, done);
 	},
 
 	render: function() {
 		var self = this;
 		var todo_rows = [];
+
 		this.props.todos.forEach(function(note) {
 			todo_rows.push(
 				<TodoElement
 					note={note}
-					index={todo_rows.length + 1}
-					onUserChecked={self.handleCheck}
+					index={todo_rows.length}
+					handleCheck={self.handleCheck}
 				/>
 			);
 		});
+
 		return (
 			<div>
-				Task text: {this.props.newTaskText}
 				<br/>
 				{todo_rows}
 			</div>
@@ -76,56 +83,113 @@ var TodoList = React.createClass({
 });
 
 var TodoForm = React.createClass({
-	handleInputChange: function() {
-		this.props.onUserInput(
-			this.refs.newTodoInput.value
-		);
+	getInitialState: function() {
+		return {todo_text: ''};
+	},
+
+	handleSubmit: function(event) {
+		event.preventDefault();
+
+		if (this.state.todo_text.length == 0) return;
+
+		this.props.handleAddTodo(this.state.todo_text);
+		this.setState({todo_text: ''});
+	},
+
+	onChangeInput: function(event) {
+		this.setState({todo_text: event.target.value});
 	},
 
 	render: function() {
 		return (
 			<div>
-				<input
-					type="text"
-					placeholder="Todo..."
-					value={this.props.newTaskText}
-					ref="newTodoInput"
-					onChange={this.handleInputChange}
-				/>
-				<button>Add</button>
+				<br/>
+				<form onSubmit={this.handleSubmit}>
+					<input
+						onChange={this.onChangeInput}
+						value={this.state.todo_text}
+						placeholder="Enter todo text here..."
+						ref="newTodoInput"
+					/>
+					<button class="addBtn">Add</button>
+				</form>
 			</div>
 		);
 	}
 });
 
 var TodoTable = React.createClass({
-	handleUserInput: function(newTaskText) {
-		this.setState({
-			newTaskText: newTaskText
-		});
-
-	},
 	getInitialState: function() {
 		return {
-			newTaskText: ''
+			newTaskText: '',
+			todos_data: []
 		};
 
 	},
-	render: function() {
-		var self = this
-		this.props.todos_data.forEach(function(note) {
-			console.log("["+self.props.todos_data.indexOf(note)+"] = " + note.done);
+
+	componentDidMount: function() {
+		var self = this;
+		this.setState({
+			todos_data: self.props.todos_data
 		});
+	},
+
+	handleClear: function() {
+		this.setState({
+			todos_data: []
+		});
+
+	},
+
+	handleDeleteSelected: function() {
+		var new_todos_data = [];
+		this.state.todos_data.forEach(function(todo, index, todos){
+			if (!todo.done) {
+				new_todos_data.push(todo);
+			}
+		});
+
+		this.setState({
+			todos_data: new_todos_data
+		});
+
+	},
+
+	handleCheck: function(index, check) {
+		this.state.todos_data[index].done = check;
+
+		this.setState({
+			todos_data: this.state.todos_data
+		});
+
+	},
+
+	addTodo: function(todo_text) {
+		if (todo_text.length == 0) return;
+
+		this.state.todos_data.push(
+			{ done: false, text: todo_text}
+		);
+
+		this.setState({
+			todos_data: this.state.todos_data
+		});
+	},
+
+	render: function() {
 		return (
 			<div>
-				<TodoMenu />
+				<TodoMenu
+					handleClear={this.handleClear}
+					handleDeleteSelected={this.handleDeleteSelected}
+				/>
 				<TodoList
-					todos={this.props.todos_data}
-					newTaskText={this.state.newTaskText}
+					todos={this.state.todos_data}
+					handleCheck={this.handleCheck}
 				/>
 				<TodoForm
-					onUserInput={this.handleUserInput}
-					newTaskText={this.state.newTaskText}/>
+					handleAddTodo={this.addTodo}
+				/>
 			</div>
 		);
 	}
